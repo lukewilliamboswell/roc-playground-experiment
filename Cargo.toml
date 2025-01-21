@@ -1,0 +1,13 @@
+[package]
+name = "playground"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bumpalo = { version = "3.12.0", features = ["collections"] }
+roc_target = { git = "https://github.com/roc-lang/roc.git" }
+roc_load = { git = "https://github.com/roc-lang/roc.git" }
+roc_reporting = { git = "https://github.com/roc-lang/roc.git" }
+roc_packaging = { git = "https://github.com/roc-lang/roc.git" }
+roc_gen_wasm = { git = "https://github.com/roc-lang/roc.git" }
+roc_collections = { git = "https://github.com/roc-lang/roc.git" }
