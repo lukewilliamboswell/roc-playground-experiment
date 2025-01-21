@@ -1,18 +1,20 @@
 # Roc Playground Experiment
 
-Uses cargo wasi, install with `cargo install cargo-wasi`
+Uses cargo wasi and wasmtime, install with `cargo install cargo-wasi` and `cargo install wasmtime-cli`.
 
 ## Run locally
 
 ```sh
-$ cargo wasi run
+$ ./run.sh
 ```
 
 ## Run in runno
 
 ```sh
-$ cargo build --release
-$ cp target/wasm32-wasi/release/playground.wasm playground.wasi.wasm
+$ ./run.sh
 ```
 
-Then upload `playground.wasi.wasm` to https://runno.dev/wasi
+Upload the files to https://runno.dev/wasi
+- playground.wasi.wasm
+- example/app.roc
+- example/platform.roc
