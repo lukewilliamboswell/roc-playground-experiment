@@ -11,7 +11,7 @@ $ ./run.sh
 ## Run in runno
 
 ```sh
-$ ./run.sh
+$ ./run.sh --release
 ```
 
 Upload the files to https://runno.dev/wasi
