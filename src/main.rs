@@ -44,8 +44,8 @@ fn main() {
     }
 }
 
-fn print_expr(loc_expr: &Expr) {
-    match loc_expr {
+fn print_expr(expr: &Expr) {
+    match expr {
         Expr::When { loc_cond, .. } => {
             println!("WHEN");
             print_expr(&loc_cond.value);
@@ -57,7 +57,7 @@ fn print_expr(loc_expr: &Expr) {
             );
         }
         _ => {
-            println!("UNSUPPORTED {:?}", loc_expr);
+            println!("UNSUPPORTED {:?}", expr);
         }
     }
 }
