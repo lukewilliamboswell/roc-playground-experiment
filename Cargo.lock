@@ -1056,10 +1056,12 @@ name = "playground"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
+ "roc_can",
  "roc_collections",
  "roc_gen_wasm",
  "roc_load",
  "roc_packaging",
+ "roc_region",
  "roc_reporting",
  "roc_target",
 ]

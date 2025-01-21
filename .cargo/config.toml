@@ -1,2 +1,10 @@
 [build]
-target = "wasm32-wasi"
+target = "wasm32-wasip1"
+
+[target.wasm32-wasip1]
+rustflags = [
+    "-Copt-level=z",       # Optimize for size aggressively
+    "-Clto=fat",           # Enable link-time optimization
+    "-Cembed-bitcode=yes", # Enable LTO between codegen units
+    "-Ccodegen-units=1",   # Reduce parallel code generation units for better optimization
+]

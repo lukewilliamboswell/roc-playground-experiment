@@ -11,3 +11,5 @@ roc_reporting = { git = "https://github.com/roc-lang/roc.git" }
 roc_packaging = { git = "https://github.com/roc-lang/roc.git" }
 roc_gen_wasm = { git = "https://github.com/roc-lang/roc.git" }
 roc_collections = { git = "https://github.com/roc-lang/roc.git" }
+roc_can = { git = "https://github.com/roc-lang/roc.git" }
+roc_region = { git = "https://github.com/roc-lang/roc.git" }
