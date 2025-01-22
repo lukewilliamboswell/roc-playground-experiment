@@ -13,3 +13,6 @@ roc_gen_wasm = { git = "https://github.com/roc-lang/roc.git" }
 roc_collections = { git = "https://github.com/roc-lang/roc.git" }
 roc_can = { git = "https://github.com/roc-lang/roc.git" }
 roc_region = { git = "https://github.com/roc-lang/roc.git" }
+roc_solve = { git = "https://github.com/roc-lang/roc.git" }
+roc_module = { git = "https://github.com/roc-lang/roc.git" }
+roc_types = { git = "https://github.com/roc-lang/roc.git" }

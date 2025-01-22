@@ -1,4 +1,8 @@
-app [main!] { pf: platform "platform.roc" }
+app [main] { pf: platform "platform.roc" }
 
-main! = |_args|
-    Ok({})
+greeting : Str
+greeting = "hello"
+
+main : Str -> Str
+main = |name|
+    "${greeting} ${name}!"

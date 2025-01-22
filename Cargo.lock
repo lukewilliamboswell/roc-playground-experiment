@@ -1060,10 +1060,13 @@ dependencies = [
  "roc_collections",
  "roc_gen_wasm",
  "roc_load",
+ "roc_module",
  "roc_packaging",
  "roc_region",
  "roc_reporting",
+ "roc_solve",
  "roc_target",
+ "roc_types",
 ]
 
 [[package]]

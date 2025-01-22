@@ -1,12 +1,14 @@
 platform ""
-    requires {} { main! : List Str => Result {} [Exit I32 Str]_ }
+    requires {} { main : Str -> Str }
     exposes []
     packages {}
     imports []
-    provides [main_for_host!]
+    provides [main_for_host, main_for_host_two]
 
-main_for_host! : {} => I32
-main_for_host! = |_|
-    when main!(["app", "arg1"]) is
-        Ok({}) -> 0
-        Err(_) -> 1
+main_for_host : {} -> Str
+main_for_host = |{}|
+    main "luke"
+
+main_for_host_two : I64 -> Str
+main_for_host_two = |_|
+    main "romona"
