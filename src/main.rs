@@ -10,6 +10,19 @@ use roc_target::Target::Wasm32;
 use std::path::PathBuf;
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 2 {
+        println!("Usage: {} app.roc", args[0]);
+        std::process::exit(1);
+    }
+
+    let file_path = &args[1];
+
+    if !std::path::Path::new(file_path).exists() && !file_path.ends_with(".roc") {
+        println!("Usage: {} app.roc", args[0]);
+        std::process::exit(1);
+    }
+
     let arena = &bumpalo::Bump::new();
     let load_config = roc_load::LoadConfig {
         target: Wasm32,
@@ -23,7 +36,7 @@ fn main() {
     let opt_main_path = None;
     let loaded = roc_load::load_and_typecheck(
         arena,
-        PathBuf::from("app.roc"),
+        PathBuf::from(file_path.as_str()),
         opt_main_path,
         RocCacheDir::Disallowed,
         load_config,
@@ -31,7 +44,7 @@ fn main() {
 
     match loaded {
         Ok(module) => {
-            println!("---- DEBUGGING 'main': ----");
+            println!("---- DEBUGGING {} 'main': ----", file_path);
 
             let thing = Thing { module };
 
@@ -39,6 +52,8 @@ fn main() {
                 let mut buf = String::new();
                 thing.print_expr(&mut buf, main_expr);
                 println!("{}", buf);
+            } else {
+                println!("No 'main' function found");
             }
         }
         Err(loading_problem) => {
@@ -88,11 +103,11 @@ impl Thing {
                         self.symbol_str(symbol),
                     ));
                 } else {
-                    buf.push_str(&format!("{}", self.symbol_str(symbol),));
+                    buf.push_str(self.symbol_str(symbol));
                 }
             }
             Expr::Call(fn_data, arguments, _called_via) => {
-                buf.push_str("(");
+                buf.push('(');
                 self.print_expr(buf, &fn_data.1.value);
                 for (_arg_var, loc_expr) in arguments {
                     buf.push(' ');

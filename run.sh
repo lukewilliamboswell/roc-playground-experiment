@@ -41,4 +41,4 @@ cp "target/wasm32-wasip1/$SOURCE_DIR/playground.wasm" playground.wasi.wasm
 ls -hl playground.wasi.wasm
 
 # run with wasmtime from the example/ directory
-cd example && wasmtime run --dir . ../playground.wasi.wasm
+cd example && wasmtime run --dir . ../playground.wasi.wasm app.roc
