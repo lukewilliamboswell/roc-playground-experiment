@@ -3,12 +3,10 @@ use roc_load::ExecutionMode;
 use roc_load::FunctionKind;
 use roc_load::LoadedModule;
 use roc_load::Threading;
-// use roc_module::symbol::{Interns, Symbol};
+use roc_module::symbol;
 use roc_packaging::cache::RocCacheDir;
 use roc_reporting::report::{RenderTarget, DEFAULT_PALETTE};
-// use roc_solve::module::Solved;
 use roc_target::Target::Wasm32;
-use roc_types::subs::Variable;
 use std::path::PathBuf;
 
 fn main() {
@@ -33,10 +31,15 @@ fn main() {
 
     match loaded {
         Ok(module) => {
-            println!("----DEBUGGING LOADED MODULE----");
+            println!("---- DEBUGGING 'main': ----");
 
             let thing = Thing { module };
-            thing.print_stuff();
+
+            if let Some(main_expr) = thing.find_symbol("main") {
+                let mut buf = String::new();
+                thing.print_expr(&mut buf, main_expr);
+                println!("{}", buf);
+            }
         }
         Err(loading_problem) => {
             println!("ERROR DURING LOAD AND TYPECHECK {:?}", loading_problem);
@@ -49,76 +52,73 @@ struct Thing {
 }
 
 impl Thing {
-    fn var_str(&self, var: &Variable) -> String {
-        format!(
-            "{:?} = {:?};",
-            var,
-            self.module.solved.inner().dbg(var.clone())
-        )
-    }
-    fn print_stuff(&self) {
-        dbg!(&self.module.filename);
-
-        dbg!(&self.module.exposed_to_host);
-
-        self.module
-            .declarations_by_id
-            .iter()
-            .for_each(|(id, decl)| {
-                println!("MODULE ID {:?}", &id);
-                println!("VARIABLES");
-                decl.variables.iter().for_each(|var| {
-                    println!("{}", self.var_str(var));
-                });
-                println!("EXPRESSIONS");
-                decl.expressions.iter().for_each(|loc_expr| {
-                    self.print_expr(&loc_expr.value);
-                });
-            });
+    fn find_symbol(&self, name: &str) -> Option<&Expr> {
+        for (_, module) in self.module.typechecked.iter() {
+            for (i, symbol) in module.decls.symbols.iter().enumerate() {
+                if self.symbol_str(&symbol.value) == name {
+                    return Some(&module.decls.expressions[i].value);
+                }
+            }
+        }
+        None
     }
 
-    fn print_expr(&self, expr: &Expr) {
+    fn symbol_str(&self, symbol: &symbol::Symbol) -> &str {
+        symbol.as_str(&self.module.interns)
+    }
+
+    fn module_str(&self, symbol: &symbol::Symbol) -> Option<&str> {
+        if symbol.module_string(&self.module.interns).as_str() == "#UserApp" {
+            None
+        } else {
+            Some(symbol.module_string(&self.module.interns))
+        }
+    }
+
+    fn print_expr(&self, buf: &mut String, expr: &Expr) {
         match expr {
             Expr::Str(str) => {
-                println!("STR {:?};", str);
+                buf.push_str(&format!("{:?}", str));
             }
-            Expr::Var(symbol, var) => {
-                println!(
-                    "VAR {:?} = {:?};",
-                    &symbol.as_str(&self.module.interns),
-                    &self.var_str(var)
-                );
+            Expr::Var(symbol, _var) => {
+                if let Some(bultin_module_name) = self.module_str(symbol) {
+                    buf.push_str(&format!(
+                        "{}.{}",
+                        bultin_module_name,
+                        self.symbol_str(symbol),
+                    ));
+                } else {
+                    buf.push_str(&format!("{}", self.symbol_str(symbol),));
+                }
             }
             Expr::Call(fn_data, arguments, _called_via) => {
-                println!("BEGIN CALL");
-                println!("  - function var {}", self.var_str(&fn_data.0));
-                println!("  - closure var {}", self.var_str(&fn_data.2));
-                println!("  - return var {}", self.var_str(&fn_data.3));
-                println!("  - fx_var {}", self.var_str(&fn_data.4));
-                println!("  - callee_expr {:?}", self.print_expr(&fn_data.1.value));
+                buf.push_str("(");
+                // Print function expression
+                self.print_expr(buf, &fn_data.1.value);
 
-                for (arg_var, loc_expr) in arguments.iter() {
-                    println!(
-                        "  - arg: {:?} loc_expr: {:?}",
-                        self.var_str(arg_var),
-                        self.print_expr(&loc_expr.value)
-                    );
+                // Print arguments
+                for (_arg_var, loc_expr) in arguments {
+                    buf.push(' ');
+                    self.print_expr(buf, &loc_expr.value);
                 }
-                println!("END CALL;");
+                buf.push(')');
             }
-            // Expr::When {
-            //     loc_cond, branches, ..
-            // } => {
-            //     println!("WHEN");
-            //     print_expr(&loc_cond.value, self.var_str);
-
-            //     for branch in branches.iter() {
-            //         println!("  - when branch");
-            //         print_expr(&branch.value.value, self.var_str);
-            //     }
-            // }
+            Expr::Int(_, _, _, n, _) => {
+                buf.push_str(&format!("(Int {})", n));
+            }
+            Expr::Float(_, _, _, n, _) => {
+                buf.push_str(&format!("(Float {})", n));
+            }
+            Expr::List { loc_elems, .. } => {
+                buf.push_str("(List");
+                for elem in loc_elems {
+                    buf.push(' ');
+                    self.print_expr(buf, &elem.value);
+                }
+                buf.push(')');
+            }
             _ => {
-                println!("UNSUPPORTED {:?}", expr);
+                buf.push_str(&format!("(UNSUPPORTED NODE {:?})", expr));
             }
         }
     }
