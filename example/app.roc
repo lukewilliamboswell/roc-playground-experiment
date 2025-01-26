@@ -1,10 +1,11 @@
 app [main] { pf: platform "platform.roc" }
 
-import Counter
+import Store
 
-apples : U64
-apples = 5
-
-main : Str -> Str
 main = |name|
-    "hello ${name}!, I have ${Num.to_str apples}, count ${Num.to_str Counter.count}"
+    greeting = "Ahoy"
+    """
+    ${greeting} there ${name}, you have;
+        - ${Num.to_str Store.apples} apples, and
+        - ${Num.to_str Store.bananas} bananas.
+    """

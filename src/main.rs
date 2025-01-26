@@ -12,14 +12,22 @@ use std::path::PathBuf;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
-        println!("Usage: {} app.roc", args[0]);
+        println!("Missing args. Usage: {} app.roc", args[0]);
         std::process::exit(1);
     }
 
     let file_path = &args[1];
 
-    if !std::path::Path::new(file_path).exists() && !file_path.ends_with(".roc") {
-        println!("Usage: {} app.roc", args[0]);
+    if !std::path::Path::new(file_path).exists() {
+        println!("File not found. Usage: {} app.roc", args[0]);
+        std::process::exit(1);
+    }
+
+    if !file_path.ends_with(".roc") {
+        println!(
+            "File doesn't end with '.roc' extension. Usage: {} app.roc",
+            args[0]
+        );
         std::process::exit(1);
     }
 
@@ -114,6 +122,10 @@ impl Thing {
                     self.print_expr(buf, &loc_expr.value);
                 }
                 buf.push(')');
+            }
+            Expr::LetNonRec(_, loc_expr) => {
+                // for now ... ignore non-recursive definition e.g. apples = 2
+                self.print_expr(buf, &loc_expr.value);
             }
             _ => {
                 buf.push_str(&format!("(UNSUPPORTED {:?})", expr));
