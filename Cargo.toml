@@ -16,3 +16,4 @@ roc_region = { git = "https://github.com/roc-lang/roc.git" }
 roc_solve = { git = "https://github.com/roc-lang/roc.git" }
 roc_module = { git = "https://github.com/roc-lang/roc.git" }
 roc_types = { git = "https://github.com/roc-lang/roc.git" }
+roc_load_internal = { git = "https://github.com/roc-lang/roc.git" }

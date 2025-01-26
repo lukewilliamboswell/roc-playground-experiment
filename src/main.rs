@@ -1,68 +1,68 @@
-use roc_can::expr::Expr;
-use roc_load::ExecutionMode;
-use roc_load::FunctionKind;
-use roc_load::LoadedModule;
-use roc_load::Threading;
-use roc_module::symbol;
-use roc_packaging::cache::RocCacheDir;
-use roc_reporting::report::{RenderTarget, DEFAULT_PALETTE};
-use roc_target::Target::Wasm32;
-use std::path::PathBuf;
-
 fn main() {
+    // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
+
     if args.len() != 2 {
         println!("Missing args. Usage: {} app.roc", args[0]);
-        std::process::exit(1);
+        ExitCode::MissingArgs.exit();
     }
 
-    let file_path = &args[1];
+    let file_path = std::path::PathBuf::from(&args[1]);
 
-    if !std::path::Path::new(file_path).exists() {
+    if !file_path.exists() {
         println!("File not found. Usage: {} app.roc", args[0]);
-        std::process::exit(1);
+        ExitCode::FileNotFound.exit();
     }
 
-    if !file_path.ends_with(".roc") {
+    if !matches!(
+        file_path.extension().and_then(|ext| ext.to_str()),
+        Some("roc")
+    ) {
         println!(
             "File doesn't end with '.roc' extension. Usage: {} app.roc",
             args[0]
         );
-        std::process::exit(1);
+        ExitCode::InvalidExtension.exit();
     }
 
+    // Load and typecheck the roc file
     let arena = &bumpalo::Bump::new();
+
     let load_config = roc_load::LoadConfig {
-        target: Wasm32,
-        function_kind: FunctionKind::LambdaSet,
-        threading: Threading::Single,
-        render: RenderTarget::ColorTerminal,
-        palette: DEFAULT_PALETTE,
-        exec_mode: ExecutionMode::Check,
+        target: roc_target::Target::Wasm32,
+        function_kind: roc_load::FunctionKind::LambdaSet,
+        threading: roc_load::Threading::Single,
+        render: roc_reporting::report::RenderTarget::ColorTerminal,
+        palette: roc_reporting::report::DEFAULT_PALETTE,
+        exec_mode: roc_load::ExecutionMode::Check,
     };
 
     let opt_main_path = None;
     let loaded = roc_load::load_and_typecheck(
         arena,
-        PathBuf::from(file_path.as_str()),
+        file_path.clone(),
         opt_main_path,
-        RocCacheDir::Disallowed,
+        roc_packaging::cache::RocCacheDir::Disallowed,
         load_config,
     );
 
+    // Process the loaded module
     match loaded {
         Ok(module) => {
-            println!("---- DEBUGGING {} 'main': ----", file_path);
+            println!("---- DEBUGGING {} 'main': ----", file_path.display());
 
-            let thing = Thing { module };
+            let roc_loaded_module = RocLoadedModule { module };
 
-            if let Some(main_expr) = thing.find_symbol("main") {
+            if let Some(main_expr) = roc_loaded_module.find_symbol("main") {
                 let mut buf = String::new();
-                thing.print_expr(&mut buf, main_expr);
+                roc_loaded_module.print_expr(&mut buf, main_expr);
                 println!("{}", buf);
             } else {
                 println!("No 'main' function found");
             }
+        }
+        Err(roc_load_internal::file::LoadingProblem::FormattedReport(report, _)) => {
+            print!("{}", report);
         }
         Err(loading_problem) => {
             println!("ERROR DURING LOAD AND TYPECHECK {:?}", loading_problem);
@@ -70,12 +70,15 @@ fn main() {
     }
 }
 
-struct Thing {
-    module: LoadedModule,
+// We wrap the LoadedModule in a struct so we can implement some helper methods
+struct RocLoadedModule {
+    module: roc_load::LoadedModule,
 }
 
-impl Thing {
-    fn find_symbol(&self, name: &str) -> Option<&Expr> {
+impl RocLoadedModule {
+    /// Look for a symbol in the typechecked `CheckedModule` which includes
+    /// the sovlved (types) in `Subs`titusions and declarations.
+    fn find_symbol(&self, name: &str) -> Option<&roc_can::expr::Expr> {
         for (_, module) in self.module.typechecked.iter() {
             for (i, symbol) in module.decls.symbols.iter().enumerate() {
                 if self.symbol_str(&symbol.value) == name {
@@ -86,11 +89,13 @@ impl Thing {
         None
     }
 
-    fn symbol_str(&self, symbol: &symbol::Symbol) -> &str {
+    /// Represents a roc internal `Symbol` as a string
+    fn symbol_str(&self, symbol: &roc_module::symbol::Symbol) -> &str {
         symbol.as_str(&self.module.interns)
     }
 
-    fn module_str(&self, symbol: &symbol::Symbol) -> Option<&str> {
+    /// Represents a roc internal module `Symbol` as a string
+    fn module_str(&self, symbol: &roc_module::symbol::Symbol) -> Option<&str> {
         if symbol.module_string(&self.module.interns).as_str() == "#UserApp" {
             None
         } else {
@@ -98,7 +103,10 @@ impl Thing {
         }
     }
 
-    fn print_expr(&self, buf: &mut String, expr: &Expr) {
+    /// Recursively traverse the expression tree and convert it to
+    /// an S-Expression like string
+    fn print_expr(&self, buf: &mut String, expr: &roc_can::expr::Expr) {
+        use roc_can::expr::Expr;
         match expr {
             Expr::Str(str) => {
                 buf.push_str(&format!("{:?}", str));
@@ -128,8 +136,22 @@ impl Thing {
                 self.print_expr(buf, &loc_expr.value);
             }
             _ => {
+                // we don't handle all the node types yet...
                 buf.push_str(&format!("(UNSUPPORTED {:?})", expr));
             }
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ExitCode {
+    MissingArgs = 1,
+    FileNotFound = 2,
+    InvalidExtension = 3,
+}
+
+impl ExitCode {
+    fn exit(&self) -> ! {
+        std::process::exit(*self as i32)
     }
 }
