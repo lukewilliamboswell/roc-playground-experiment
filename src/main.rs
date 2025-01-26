@@ -135,6 +135,12 @@ impl RocLoadedModule {
                 // for now ... ignore non-recursive definition e.g. apples = 2
                 self.print_expr(buf, &loc_expr.value);
             }
+            Expr::RuntimeError(error) => {
+                buf.push_str(&format!(
+                    "(RUNTIME ERROR {})",
+                    error.clone().runtime_message()
+                ));
+            }
             _ => {
                 // we don't handle all the node types yet...
                 buf.push_str(&format!("(UNSUPPORTED {:?})", expr));
