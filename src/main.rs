@@ -93,32 +93,15 @@ impl Thing {
             }
             Expr::Call(fn_data, arguments, _called_via) => {
                 buf.push_str("(");
-                // Print function expression
                 self.print_expr(buf, &fn_data.1.value);
-
-                // Print arguments
                 for (_arg_var, loc_expr) in arguments {
                     buf.push(' ');
                     self.print_expr(buf, &loc_expr.value);
                 }
                 buf.push(')');
             }
-            Expr::Int(_, _, _, n, _) => {
-                buf.push_str(&format!("(Int {})", n));
-            }
-            Expr::Float(_, _, _, n, _) => {
-                buf.push_str(&format!("(Float {})", n));
-            }
-            Expr::List { loc_elems, .. } => {
-                buf.push_str("(List");
-                for elem in loc_elems {
-                    buf.push(' ');
-                    self.print_expr(buf, &elem.value);
-                }
-                buf.push(')');
-            }
             _ => {
-                buf.push_str(&format!("(UNSUPPORTED NODE {:?})", expr));
+                buf.push_str(&format!("(UNSUPPORTED {:?})", expr));
             }
         }
     }
